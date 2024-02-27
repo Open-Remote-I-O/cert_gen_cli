@@ -80,7 +80,6 @@ var genCaKeysCmd = &cobra.Command{
 			// Encode private key in PEM format
 			binPrivKey, err := x509.MarshalPKCS8PrivateKey(caPrivKey)
 			if err != nil {
-				fmt.Println("aragosta")
 				return err
 			}
 			privKeyPem := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: binPrivKey})
