@@ -17,10 +17,11 @@ import (
 )
 
 var (
-	ParentFilePath = "./"
-	ParentCertName = "client.crt"
-	CaCertFilePath = "./ca.crt"
-	CaKeyFilePath  = "./ca.key"
+	ParentFilePath   = "./"
+	ParentCertName   = "client.crt"
+	CaCertFilePath   = "./ca.crt"
+	CaKeyFilePath    = "./ca.key"
+	OrganizationName = ""
 )
 
 func parseCaCertificate() (*x509.Certificate, error) {
@@ -78,10 +79,14 @@ var genCaParentCertCmd = &cobra.Command{
 			return
 		}
 
+		if OrganizationName == "" {
+			OrganizationName = utils.InputPrompt("Input your organization name:")
+		}
+
 		serverCertTmpl := x509.Certificate{
 			SerialNumber: randomSn,
 			Subject: pkix.Name{
-				Organization: []string{utils.InputPrompt("Input your organization name:")},
+				Organization: []string{OrganizationName},
 			},
 			NotBefore:             time.Now(),
 			NotAfter:              time.Now().Add(365 * 24 * time.Hour),
@@ -150,4 +155,5 @@ func init() {
 	genCaParentCertCmd.Flags().StringP("name", "n", ParentCertName, `ca cert and key name.`)
 	genCaParentCertCmd.Flags().StringP("ca-cert-path", "c", CaCertFilePath, `path to read the ca cert from.`)
 	genCaParentCertCmd.Flags().StringP("ca-key-path", "k", CaKeyFilePath, `path to read the ca private key from.`)
+	genCaParentCertCmd.Flags().StringVar(&OrganizationName, "organization-name", "", `organization name to have in the newly generated certificate.`)
 }
