@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"cert_gen_cli/utils"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -12,9 +11,9 @@ import (
 	"os"
 	"time"
 
-	"golang.org/x/sync/errgroup"
-
+	"github.com/Open-Remote-I-O/cert_gen_cli/utils"
 	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 )
 
 var (

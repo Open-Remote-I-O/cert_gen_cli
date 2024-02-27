@@ -1,4 +1,4 @@
-module cert_gen_cli
+module github.com/Open-Remote-I-O/cert_gen_cli
 
 go 1.22.0
 
