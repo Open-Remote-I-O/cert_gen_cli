@@ -18,10 +18,29 @@ import (
 )
 
 var (
-	ParentFilePath string
-	ParentCertName string
-	CaCertFilePath string
+	ParentFilePath = "./"
+	ParentCertName = "client.crt"
+	CaCertFilePath = "./ca.crt"
+	CaKeyFilePath  = "./ca.key"
 )
+
+func parseCaCertificate() (*x509.Certificate, error) {
+	rawPemCert, err := os.ReadFile(CaCertFilePath)
+	if err != nil {
+		fmt.Println("Error reading CA certificate:", err)
+		return nil, err
+	}
+
+	decodedCaCert, _ := pem.Decode(rawPemCert)
+
+	caCert, err := x509.ParseCertificate(decodedCaCert.Bytes)
+	if err != nil {
+		fmt.Println("Error parsing CA certificate:", err)
+		return nil, err
+	}
+
+	return caCert, nil
+}
 
 // genCaParentCertCmd represents the genCaParentCert command
 var genCaParentCertCmd = &cobra.Command{
@@ -29,25 +48,39 @@ var genCaParentCertCmd = &cobra.Command{
 	Short: "create sub certificate from a CA cert",
 	Long:  `creates a keypair for a client using a CA root certificate`,
 	Run: func(cmd *cobra.Command, args []string) {
-		res, err := os.ReadFile(CaCertFilePath)
+		caCert, err := parseCaCertificate()
 		if err != nil {
-			fmt.Println("Error reading CA certificate:", err)
 			return
 		}
-		// TODO: eventually tranform this two operations in two concurrent operations sending output to a channel
+
+		rawCaKey, err := os.ReadFile(CaKeyFilePath)
+		if err != nil {
+			fmt.Println("Error reading CA key from specified path: \n  err:", CaKeyFilePath, err)
+			return
+		}
+
+		decodedCaKey, _ := pem.Decode(rawCaKey)
+
+		parsedCaKey, err := x509.ParsePKCS8PrivateKey(decodedCaKey.Bytes)
+		if err != nil {
+			fmt.Println("Error parsing CA key:", err)
+			return
+		}
+
 		serverPrivKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 		if err != nil {
 			fmt.Println("Error generate private key:", err)
 			return
 		}
 
-		caCert, err := x509.ParseCertificate(res)
+		randomSn, err := utils.GenerateRandomThreeBytesSN()
 		if err != nil {
-			fmt.Println("Error parsing CA certificate:", err)
+			fmt.Println("Error while generating random CA serial number:", err)
 			return
 		}
 
 		serverCertTmpl := x509.Certificate{
+			SerialNumber: randomSn,
 			Subject: pkix.Name{
 				Organization: []string{utils.InputPrompt("Input your organization name:")},
 			},
@@ -68,7 +101,7 @@ var genCaParentCertCmd = &cobra.Command{
 				&serverCertTmpl,
 				caCert,
 				serverPrivKey.Public(),
-				serverPrivKey,
+				parsedCaKey,
 			)
 			if err != nil {
 				return err
@@ -107,19 +140,15 @@ var genCaParentCertCmd = &cobra.Command{
 			os.Remove(utils.GenFilePath(ParentFilePath, ParentCertName, keyFileExtension))
 			return
 		}
-		fmt.Println("Successfully fetched all URLs.")
+		fmt.Println("Successfully generated parent keypair from CA keypair")
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(genCaParentCertCmd)
 
-	// Setting default path to write into
-	ParentFilePath := "./"
-	ParentCertName := "ca"
-	CaCertFilePath := "./"
-
-	genCaParentCertCmd.Flags().StringP("path", "p", ParentFilePath, `define path to generate certificate into.`)
-	genCaParentCertCmd.Flags().StringP("name", "n", ParentCertName, `define ca cert and key name.`)
-	genCaParentCertCmd.Flags().StringP("ca-cert-path", "c", CaCertFilePath, `define path to read the ca cert from.`)
+	genCaParentCertCmd.Flags().StringP("output", "o", ParentFilePath, `output path for new certificate.`)
+	genCaParentCertCmd.Flags().StringP("name", "n", ParentCertName, `ca cert and key name.`)
+	genCaParentCertCmd.Flags().StringP("ca-cert-path", "c", CaCertFilePath, `path to read the ca cert from.`)
+	genCaParentCertCmd.Flags().StringP("ca-key-path", "k", CaKeyFilePath, `path to read the ca private key from.`)
 }

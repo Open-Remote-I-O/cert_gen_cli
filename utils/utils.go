@@ -2,7 +2,10 @@ package utils
 
 import (
 	"bufio"
+	"crypto/rand"
 	"fmt"
+	"math"
+	"math/big"
 	"os"
 	"strings"
 )
@@ -26,4 +29,14 @@ func InputPrompt(label string) string {
 		}
 	}
 	return strings.TrimSpace(s)
+}
+
+func GenerateRandomThreeBytesSN() (*big.Int, error) {
+	// https://cabforum.org/working-groups/server/baseline-requirements/documents/ at the moment of creating program
+	// as stated by version 2.0.1 at least 64 bits of entropy are strongly suggested
+	val, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
+	if err != nil {
+		return nil, err
+	}
+	return val, nil
 }

@@ -16,8 +16,15 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var FilePath string
-var CaCertName string
+const (
+	crtFileExtension = ".crt"
+	keyFileExtension = ".key"
+)
+
+var (
+	FilePath   = "./"
+	CaCertName = "ca"
+)
 
 // genCaKeysCmd represents the genCaKeys command
 var genCaKeysCmd = &cobra.Command{
@@ -32,13 +39,21 @@ var genCaKeysCmd = &cobra.Command{
 			return
 		}
 
+		randomSn, err := utils.GenerateRandomThreeBytesSN()
+		if err != nil {
+			fmt.Println("Error while generating random CA serial number:", err)
+			return
+		}
+
 		// Create certificate template
 		caTmpl := x509.Certificate{
+			SerialNumber: randomSn,
 			Subject: pkix.Name{
 				Organization: []string{utils.InputPrompt("Input your organization name:")},
+				CommonName:   "localhost",
 			},
 			NotBefore:             time.Now(),
-			NotAfter:              time.Now().Add(365 * 24 * time.Hour),
+			NotAfter:              time.Now().AddDate(1, 0, 0),
 			ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 			KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 			IsCA:                  true,
@@ -51,15 +66,11 @@ var genCaKeysCmd = &cobra.Command{
 		errGroup.Go(func() error {
 			caCert, err := x509.CreateCertificate(rand.Reader, &caTmpl, &caTmpl, caPrivKey.Public(), caPrivKey)
 			if err != nil {
-				fmt.Println("Error creating certificate:", err)
 				return err
 			}
 			certPem := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: caCert})
-
 			caCrtFilePath := utils.GenFilePath(FilePath, CaCertName, crtFileExtension)
-			// Write certificate and key to files
 			if err = os.WriteFile(caCrtFilePath, certPem, 0644); err != nil {
-				fmt.Println("Error writing certificate:", err)
 				return err
 			}
 			return nil
@@ -67,15 +78,13 @@ var genCaKeysCmd = &cobra.Command{
 
 		errGroup.Go(func() error {
 			// Encode private key in PEM format
-			binPrivKey, err := x509.MarshalECPrivateKey(caPrivKey)
+			binPrivKey, err := x509.MarshalPKCS8PrivateKey(caPrivKey)
 			if err != nil {
-				fmt.Println("Error creating private key:", err)
+				fmt.Println("aragosta")
 				return err
 			}
-
 			privKeyPem := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: binPrivKey})
 			if err = os.WriteFile(utils.GenFilePath(FilePath, CaCertName, keyFileExtension), privKeyPem, 0644); err != nil {
-				fmt.Println("Error writing private key:", err)
 				return err
 			}
 			return nil
@@ -87,9 +96,9 @@ var genCaKeysCmd = &cobra.Command{
 
 			fmt.Println("Cleaning up leftovers...")
 
-			os.Remove(utils.GenFilePath(ParentFilePath, ParentCertName, keyFileExtension))
+			os.Remove(utils.GenFilePath(FilePath, CaCertName, crtFileExtension))
 
-			os.Remove(utils.GenFilePath(ParentFilePath, ParentCertName, keyFileExtension))
+			os.Remove(utils.GenFilePath(FilePath, CaCertName, keyFileExtension))
 			return
 		}
 		fmt.Println("Successfully created CA keypair")
@@ -99,10 +108,6 @@ var genCaKeysCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(genCaKeysCmd)
 
-	// Setting default path to write into
-	FilePath := "./"
-	CaCertName := "ca"
-
-	genCaKeysCmd.Flags().StringP("path", "p", FilePath, `define path to ca certificate into.`)
-	genCaKeysCmd.Flags().StringP("name", "n", CaCertName, `define ca cert and key name.`)
+	genCaKeysCmd.Flags().StringP("path", "o", FilePath, `path to output CA certificate and key PEM file into.`)
+	genCaKeysCmd.Flags().StringP("name", "n", CaCertName, `ca cert and key name.`)
 }
