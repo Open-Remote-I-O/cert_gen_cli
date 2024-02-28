@@ -18,7 +18,7 @@ import (
 
 var (
 	ParentFilePath   = "./"
-	ParentCertName   = "client.crt"
+	ParentCertName   = "client"
 	CaCertFilePath   = "./ca.crt"
 	CaKeyFilePath    = "./ca.key"
 	OrganizationName = ""
