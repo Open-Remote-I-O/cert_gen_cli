@@ -17,14 +17,15 @@ import (
 )
 
 var (
-	ParentFilePath   = "./"
-	ParentCertName   = "client"
-	CaCertFilePath   = "./ca.crt"
-	CaKeyFilePath    = "./ca.key"
-	OrganizationName = ""
+	ParentFilePath   string
+	ParentCertName   string
+	CaCertFilePath   string
+	CaKeyFilePath    string
+	OrganizationName string
 )
 
 func parseCaCertificate() (*x509.Certificate, error) {
+	fmt.Println(CaCertFilePath)
 	rawPemCert, err := os.ReadFile(CaCertFilePath)
 	if err != nil {
 		fmt.Println("Error reading CA certificate:", err)
@@ -151,9 +152,11 @@ var genCaParentCertCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(genCaParentCertCmd)
 
-	genCaParentCertCmd.Flags().StringP("output", "o", ParentFilePath, `output path for new certificate.`)
-	genCaParentCertCmd.Flags().StringP("name", "n", ParentCertName, `ca cert and key name.`)
-	genCaParentCertCmd.Flags().StringP("ca-cert-path", "c", CaCertFilePath, `path to read the ca cert from.`)
-	genCaParentCertCmd.Flags().StringP("ca-key-path", "k", CaKeyFilePath, `path to read the ca private key from.`)
-	genCaParentCertCmd.Flags().StringVar(&OrganizationName, "organization-name", "", `organization name to have in the newly generated certificate.`)
+	genCaParentCertCmd.Flags().StringVarP(&ParentFilePath, "output", "o", "./", `output path for new certificate.`)
+	genCaParentCertCmd.Flags().StringVarP(&ParentCertName, "name", "n", "client", `ca cert and key name.`)
+	genCaParentCertCmd.Flags().StringVarP(&CaCertFilePath, "ca-cert-path", "c", "./ca.crt", `path to read the ca cert from.`)
+	genCaParentCertCmd.Flags().
+		StringVarP(&CaKeyFilePath, "ca-key-path", "k", "./ca.key", `path to read the ca private key from.`)
+	genCaParentCertCmd.Flags().
+		StringVar(&OrganizationName, "organization-name", "", `organization name to have in the newly generated certificate.`)
 }

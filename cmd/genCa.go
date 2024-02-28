@@ -22,8 +22,8 @@ const (
 )
 
 var (
-	FilePath   = "./"
-	CaCertName = "ca"
+	FilePath   string
+	CaCertName string
 )
 
 // genCaKeysCmd represents the genCaKeys command
@@ -107,6 +107,6 @@ var genCaKeysCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(genCaKeysCmd)
 
-	genCaKeysCmd.Flags().StringP("path", "o", FilePath, `path to output CA certificate and key PEM file into.`)
-	genCaKeysCmd.Flags().StringP("name", "n", CaCertName, `ca cert and key name.`)
+	genCaKeysCmd.Flags().StringVarP(&FilePath, "path", "o", "./", `path to output CA certificate and key PEM file into.`)
+	genCaKeysCmd.Flags().StringVarP(&CaCertName, "name", "n", "ca", `ca cert and key name.`)
 }
