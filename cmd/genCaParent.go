@@ -25,7 +25,6 @@ var (
 )
 
 func parseCaCertificate() (*x509.Certificate, error) {
-	fmt.Println(CaCertFilePath)
 	rawPemCert, err := os.ReadFile(CaCertFilePath)
 	if err != nil {
 		fmt.Println("Error reading CA certificate:", err)
@@ -114,7 +113,7 @@ var genCaParentCertCmd = &cobra.Command{
 
 			certPem := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: serverCert})
 
-			if err = os.WriteFile(utils.GenFilePath(ParentFilePath, ParentCertName, keyFileExtension), certPem, 0644); err != nil {
+			if err = os.WriteFile(utils.GenFilePath(ParentFilePath, ParentCertName, crtFileExtension), certPem, 0644); err != nil {
 				return err
 			}
 			return nil
@@ -128,6 +127,7 @@ var genCaParentCertCmd = &cobra.Command{
 			}
 			privKeyPem := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: binServerPrivKey})
 
+			fmt.Println("parazzo ", utils.GenFilePath(ParentFilePath, ParentCertName, keyFileExtension))
 			// Write server certificate and key to files
 			if err = os.WriteFile(utils.GenFilePath(ParentFilePath, ParentCertName, keyFileExtension), privKeyPem, 0644); err != nil {
 				return err
