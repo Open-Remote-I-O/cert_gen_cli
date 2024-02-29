@@ -127,7 +127,6 @@ var genCaParentCertCmd = &cobra.Command{
 			}
 			privKeyPem := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: binServerPrivKey})
 
-			fmt.Println("parazzo ", utils.GenFilePath(ParentFilePath, ParentCertName, keyFileExtension))
 			// Write server certificate and key to files
 			if err = os.WriteFile(utils.GenFilePath(ParentFilePath, ParentCertName, keyFileExtension), privKeyPem, 0644); err != nil {
 				return err
