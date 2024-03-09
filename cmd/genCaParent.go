@@ -17,7 +17,8 @@ import (
 )
 
 var (
-	ParentFilePath   string
+	ParentCertPath   string
+	ParentKeyPath    string
 	ParentCertName   string
 	CaCertFilePath   string
 	CaKeyFilePath    string
@@ -113,7 +114,7 @@ var genCaParentCertCmd = &cobra.Command{
 
 			certPem := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: serverCert})
 
-			if err = os.WriteFile(utils.GenFilePath(ParentFilePath, ParentCertName, crtFileExtension), certPem, 0644); err != nil {
+			if err = os.WriteFile(utils.GenFilePath(ParentCertPath, ParentCertName, crtFileExtension), certPem, 0644); err != nil {
 				return err
 			}
 			return nil
@@ -128,7 +129,7 @@ var genCaParentCertCmd = &cobra.Command{
 			privKeyPem := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: binServerPrivKey})
 
 			// Write server certificate and key to files
-			if err = os.WriteFile(utils.GenFilePath(ParentFilePath, ParentCertName, keyFileExtension), privKeyPem, 0644); err != nil {
+			if err = os.WriteFile(utils.GenFilePath(ParentKeyPath, ParentCertName, keyFileExtension), privKeyPem, 0644); err != nil {
 				return err
 			}
 			return nil
@@ -139,9 +140,9 @@ var genCaParentCertCmd = &cobra.Command{
 
 			fmt.Println("Cleaning up leftovers...")
 
-			os.Remove(utils.GenFilePath(ParentFilePath, ParentCertName, keyFileExtension))
+			os.Remove(utils.GenFilePath(ParentCertPath, ParentCertName, keyFileExtension))
 
-			os.Remove(utils.GenFilePath(ParentFilePath, ParentCertName, keyFileExtension))
+			os.Remove(utils.GenFilePath(ParentKeyPath, ParentCertName, keyFileExtension))
 			return
 		}
 		fmt.Println("Successfully generated parent keypair from CA keypair")
@@ -151,11 +152,17 @@ var genCaParentCertCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(genCaParentCertCmd)
 
-	genCaParentCertCmd.Flags().StringVarP(&ParentFilePath, "output", "o", "./", `output path for new certificate.`)
+	genCaParentCertCmd.Flags().StringVar(&ParentCertPath, "cert-out", "./", "output path for new parent certificate.")
+
+	genCaParentCertCmd.Flags().StringVar(&ParentKeyPath, "key-out", "./", "output path for new parent private key.")
+
 	genCaParentCertCmd.Flags().StringVarP(&ParentCertName, "name", "n", "client", `ca cert and key name.`)
+
 	genCaParentCertCmd.Flags().StringVarP(&CaCertFilePath, "ca-cert-path", "c", "./ca.crt", `path to read the ca cert from.`)
+
 	genCaParentCertCmd.Flags().
 		StringVarP(&CaKeyFilePath, "ca-key-path", "k", "./ca.key", `path to read the ca private key from.`)
+
 	genCaParentCertCmd.Flags().
 		StringVar(&OrganizationName, "organization-name", "", `organization name to have in the newly generated certificate.`)
 }
