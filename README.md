@@ -4,7 +4,7 @@ CLI in order to generate keypairs in order to enable mTLS communication between 
 ## Installation instructions 
 
 The cli can be easily installed by the `go install` command eg:
-`go install github.com/Open-Remote-I-O/cert_gen_cli@v0.1.4`
+`go install github.com/Open-Remote-I-O/cert_gen_cli@latest`
 
 Or you can directly download and install the compiled version from the release
 

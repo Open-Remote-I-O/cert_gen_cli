@@ -22,8 +22,9 @@ const (
 )
 
 var (
-	FilePath   string
-	CaCertName string
+	FilePath          string
+	CaCertName        string
+	SubjectCommonName string
 )
 
 // genCaKeysCmd represents the genCaKeys command
@@ -50,7 +51,7 @@ var genCaKeysCmd = &cobra.Command{
 			SerialNumber: randomSn,
 			Subject: pkix.Name{
 				Organization: []string{utils.InputPrompt("Input your organization name:")},
-				CommonName:   "localhost",
+				CommonName:   utils.InputPrompt("Input subject common name:"),
 			},
 			NotBefore:             time.Now(),
 			NotAfter:              time.Now().AddDate(1, 0, 0),
@@ -109,4 +110,10 @@ func init() {
 
 	genCaKeysCmd.Flags().StringVarP(&FilePath, "path", "o", "./", `path to output CA certificate and key PEM file into.`)
 	genCaKeysCmd.Flags().StringVarP(&CaCertName, "name", "n", "ca", `ca cert and key name.`)
+
+	genCaKeysCmd.Flags().
+		StringVar(&OrganizationName, "organization-name", "", `organization name to have in the newly generated CA certificate.`)
+
+	genCaKeysCmd.Flags().
+		StringVar(&SubjectCommonName, "subject-common-name", "", `subject common name to have in the newly generated CA certificate.`)
 }
