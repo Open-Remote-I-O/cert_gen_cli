@@ -51,7 +51,7 @@ var genCaKeysCmd = &cobra.Command{
 		}
 
 		if SubjectCommonName == "" {
-			OrganizationName = utils.InputPrompt("Input subject common name:")
+			SubjectCommonName = utils.InputPrompt("Input subject common name:")
 		}
 
 		// Create certificate template
