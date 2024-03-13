@@ -84,11 +84,15 @@ var genCaParentCertCmd = &cobra.Command{
 			OrganizationName = utils.InputPrompt("Input your organization name:")
 		}
 
+		if SubjectCommonName == "" {
+			OrganizationName = utils.InputPrompt("Input subject common name:")
+		}
+
 		serverCertTmpl := x509.Certificate{
 			SerialNumber: randomSn,
 			Subject: pkix.Name{
 				Organization: []string{OrganizationName},
-				CommonName:   utils.InputPrompt("Input subject common name:"),
+				CommonName:   SubjectCommonName,
 			},
 			NotBefore:   time.Now(),
 			NotAfter:    time.Now().AddDate(1, 0, 0),
