@@ -46,12 +46,20 @@ var genCaKeysCmd = &cobra.Command{
 			return
 		}
 
+		if OrganizationName == "" {
+			OrganizationName = utils.InputPrompt("Input your organization name:")
+		}
+
+		if SubjectCommonName == "" {
+			OrganizationName = utils.InputPrompt("Input subject common name:")
+		}
+
 		// Create certificate template
 		caTmpl := x509.Certificate{
 			SerialNumber: randomSn,
 			Subject: pkix.Name{
-				Organization: []string{utils.InputPrompt("Input your organization name:")},
-				CommonName:   utils.InputPrompt("Input subject common name:"),
+				Organization: []string{OrganizationName},
+				CommonName:   SubjectCommonName,
 			},
 			NotBefore:             time.Now(),
 			NotAfter:              time.Now().AddDate(1, 0, 0),
