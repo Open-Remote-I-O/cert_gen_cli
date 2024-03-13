@@ -88,14 +88,13 @@ var genCaParentCertCmd = &cobra.Command{
 			SerialNumber: randomSn,
 			Subject: pkix.Name{
 				Organization: []string{OrganizationName},
+				CommonName:   utils.InputPrompt("Input subject common name:"),
 			},
-			NotBefore:             time.Now(),
-			NotAfter:              time.Now().Add(365 * 24 * time.Hour),
-			ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-			KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-			IsCA:                  true,
-			BasicConstraintsValid: true,
-			Issuer:                caCert.Issuer,
+			NotBefore:   time.Now(),
+			NotAfter:    time.Now().AddDate(1, 0, 0),
+			ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+			KeyUsage:    x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+			Issuer:      caCert.Issuer,
 		}
 
 		errGroup := new(errgroup.Group)
@@ -165,4 +164,7 @@ func init() {
 
 	genCaParentCertCmd.Flags().
 		StringVar(&OrganizationName, "organization-name", "", `organization name to have in the newly generated certificate.`)
+
+	genCaParentCertCmd.Flags().
+		StringVar(&SubjectCommonName, "subject-common-name", "", `subject common name to have in the newly generated certificate.`)
 }
