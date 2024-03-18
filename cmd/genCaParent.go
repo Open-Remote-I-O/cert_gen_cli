@@ -17,12 +17,11 @@ import (
 )
 
 var (
-	ParentCertPath   string
-	ParentKeyPath    string
-	ParentCertName   string
-	CaCertFilePath   string
-	CaKeyFilePath    string
-	OrganizationName string
+	ParentCertPath string
+	ParentKeyPath  string
+	ParentCertName string
+	CaCertFilePath string
+	CaKeyFilePath  string
 )
 
 func parseCaCertificate() (*x509.Certificate, error) {
@@ -80,25 +79,21 @@ var genCaParentCertCmd = &cobra.Command{
 			return
 		}
 
-		if OrganizationName == "" {
-			OrganizationName = utils.InputPrompt("Input your organization name:")
-		}
-
-		if SubjectCommonName == "" {
-			SubjectCommonName = utils.InputPrompt("Input subject common name:")
-		}
+		conf := generateConfig()
 
 		serverCertTmpl := x509.Certificate{
 			SerialNumber: randomSn,
 			Subject: pkix.Name{
-				Organization: []string{OrganizationName},
-				CommonName:   SubjectCommonName,
+				Organization: []string{conf.OrganizationName},
+				CommonName:   conf.SubjectCommonName,
 			},
 			NotBefore:   time.Now(),
 			NotAfter:    time.Now().AddDate(1, 0, 0),
 			ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 			KeyUsage:    x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 			Issuer:      caCert.Issuer,
+			DNSNames:    conf.DnsNames,
+			IPAddresses: conf.IPAddresses,
 		}
 
 		errGroup := new(errgroup.Group)
@@ -171,4 +166,7 @@ func init() {
 
 	genCaParentCertCmd.Flags().
 		StringVar(&SubjectCommonName, "subject-common-name", "", `subject common name to have in the newly generated certificate.`)
+
+	genCaParentCertCmd.Flags().
+		StringVar(&ConfigFilePath, "config-file-path", "", `configuration file path in order to generate parent certificate from`)
 }

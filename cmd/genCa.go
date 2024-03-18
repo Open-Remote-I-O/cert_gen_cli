@@ -22,10 +22,29 @@ const (
 )
 
 var (
-	FilePath          string
-	CaCertName        string
-	SubjectCommonName string
+	FilePath       string
+	CaCertName     string
+	ConfigFilePath string
 )
+
+func generateConfig() utils.CertGenConfig {
+	if ConfigFilePath != "" {
+		conf, err := utils.ParseCertGenConfig(ConfigFilePath)
+		if err != nil {
+			return utils.CertGenConfig{}
+		}
+		return *conf
+	}
+	var conf utils.CertGenConfig
+	if OrganizationName == "" {
+		conf.OrganizationName = utils.InputPrompt("Input your organization name:")
+	}
+
+	if SubjectCommonName == "" {
+		conf.SubjectCommonName = utils.InputPrompt("Input subject common name:")
+	}
+	return conf
+}
 
 // genCaKeysCmd represents the genCaKeys command
 var genCaKeysCmd = &cobra.Command{
@@ -46,20 +65,14 @@ var genCaKeysCmd = &cobra.Command{
 			return
 		}
 
-		if OrganizationName == "" {
-			OrganizationName = utils.InputPrompt("Input your organization name:")
-		}
-
-		if SubjectCommonName == "" {
-			SubjectCommonName = utils.InputPrompt("Input subject common name:")
-		}
+		conf := generateConfig()
 
 		// Create certificate template
 		caTmpl := x509.Certificate{
 			SerialNumber: randomSn,
 			Subject: pkix.Name{
-				Organization: []string{OrganizationName},
-				CommonName:   SubjectCommonName,
+				Organization: []string{conf.OrganizationName},
+				CommonName:   conf.SubjectCommonName,
 			},
 			NotBefore:             time.Now(),
 			NotAfter:              time.Now().AddDate(1, 0, 0),
@@ -67,6 +80,8 @@ var genCaKeysCmd = &cobra.Command{
 			KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 			IsCA:                  true,
 			BasicConstraintsValid: true,
+			DNSNames:              conf.DnsNames,
+			IPAddresses:           conf.IPAddresses,
 		}
 
 		errGroup := new(errgroup.Group)
@@ -124,4 +139,7 @@ func init() {
 
 	genCaKeysCmd.Flags().
 		StringVar(&SubjectCommonName, "subject-common-name", "", `subject common name to have in the newly generated CA certificate.`)
+
+	genCaKeysCmd.Flags().
+		StringVar(&ConfigFilePath, "config-file-path", "", `configuration file path in order to generate CA certificate from`)
 }
