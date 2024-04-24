@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -48,6 +46,8 @@ var genCaParentCertCmd = &cobra.Command{
 	Short: "create sub certificate from a CA cert",
 	Long:  `creates a keypair for a client using a CA root certificate`,
 	Run: func(cmd *cobra.Command, args []string) {
+		conf := generateConfig()
+
 		caCert, err := parseCaCertificate()
 		if err != nil {
 			return
@@ -67,9 +67,9 @@ var genCaParentCertCmd = &cobra.Command{
 			return
 		}
 
-		serverPrivKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		parentPrivKey, parentPublicKey, err := utils.GenerateUserRequestedKey(conf.EncryptionAlgorithm)
 		if err != nil {
-			fmt.Println("Error generate private key:", err)
+			fmt.Println("Error generating CA private key:", err)
 			return
 		}
 
@@ -79,21 +79,19 @@ var genCaParentCertCmd = &cobra.Command{
 			return
 		}
 
-		conf := generateConfig()
-
 		serverCertTmpl := x509.Certificate{
 			SerialNumber: randomSn,
 			Subject: pkix.Name{
-				Organization: []string{conf.OrganizationName},
-				CommonName:   conf.SubjectCommonName,
+				Organization: []string{conf.CertificateMetadata.OrganizationName},
+				CommonName:   conf.CertificateMetadata.SubjectCommonName,
 			},
 			NotBefore:   time.Now(),
 			NotAfter:    time.Now().AddDate(1, 0, 0),
 			ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 			KeyUsage:    x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 			Issuer:      caCert.Issuer,
-			DNSNames:    conf.DnsNames,
-			IPAddresses: conf.IPAddresses,
+			DNSNames:    conf.CertificateMetadata.DnsNames,
+			IPAddresses: conf.CertificateMetadata.IPAddresses,
 		}
 
 		errGroup := new(errgroup.Group)
@@ -103,7 +101,7 @@ var genCaParentCertCmd = &cobra.Command{
 				rand.Reader,
 				&serverCertTmpl,
 				caCert,
-				serverPrivKey.Public(),
+				parentPublicKey,
 				parsedCaKey,
 			)
 			if err != nil {
@@ -112,7 +110,7 @@ var genCaParentCertCmd = &cobra.Command{
 
 			certPem := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: serverCert})
 
-			if err = os.WriteFile(utils.GenFilePath(ParentCertPath, ParentCertName, crtFileExtension), certPem, 0644); err != nil {
+			if err = os.WriteFile(utils.GenFilePath(ParentCertPath, ParentCertName, crtFileExtension), certPem, 0o644); err != nil {
 				return err
 			}
 			return nil
@@ -120,21 +118,21 @@ var genCaParentCertCmd = &cobra.Command{
 
 		errGroup.Go(func() error {
 			// Encode server private key in PEM format
-			binServerPrivKey, err := x509.MarshalECPrivateKey(serverPrivKey)
+			binServerPrivKey, err := x509.MarshalPKCS8PrivateKey(parentPrivKey)
 			if err != nil {
 				return err
 			}
 			privKeyPem := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: binServerPrivKey})
 
 			// Write server certificate and key to files
-			if err = os.WriteFile(utils.GenFilePath(ParentKeyPath, ParentCertName, keyFileExtension), privKeyPem, 0644); err != nil {
+			if err = os.WriteFile(utils.GenFilePath(ParentKeyPath, ParentCertName, keyFileExtension), privKeyPem, 0o644); err != nil {
 				return err
 			}
 			return nil
 		})
 		if err := errGroup.Wait(); err != nil {
 			// Cleanup eventual leftovers
-			fmt.Println("Error occured while generating keypair", err)
+			fmt.Println("Error occurred while generating keypair", err)
 
 			fmt.Println("Cleaning up leftovers...")
 
