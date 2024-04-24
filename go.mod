@@ -1,6 +1,6 @@
 module github.com/Open-Remote-I-O/cert_gen_cli
 
-go 1.22.1
+go 1.22.2
 
 require (
 	github.com/pelletier/go-toml/v2 v2.1.1
