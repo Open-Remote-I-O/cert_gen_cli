@@ -54,7 +54,7 @@ func (em *EncryptionAlgorithm) ValidateEncryptionBitsRequested() error {
 	default:
 		return errors.New("encryption algorithm provided is not valid")
 	}
-	return nil
+	return errors.New("encryption algorithm provided is not valid")
 }
 
 func (em *EncryptionAlgorithm) ParseSupportedEnc() SupportedEnc {
