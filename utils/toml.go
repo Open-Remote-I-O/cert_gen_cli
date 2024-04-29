@@ -47,14 +47,15 @@ func (em *EncryptionAlgorithm) ValidateEncryptionBitsRequested() error {
 		if _, ok := ValidRSABits[em.EncBits]; !ok {
 			return errors.New("provied encryption bits value for RSA algorithm is not valid")
 		}
+		return nil
 	case "EDCSA":
 		if _, ok := ValidEDCSABits[em.EncBits]; !ok {
 			return errors.New("provied encryption bits value for EDCSA algorithm is not valid")
 		}
+		return nil
 	default:
 		return errors.New("encryption algorithm provided is not valid")
 	}
-	return errors.New("encryption algorithm provided is not valid")
 }
 
 func (em *EncryptionAlgorithm) ParseSupportedEnc() SupportedEnc {
